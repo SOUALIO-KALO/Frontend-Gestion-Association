@@ -1,0 +1,85 @@
+/* ==================== Pages ==================== */
+
+.page-container {
+  min-height: 100vh;
+  background-color: var(--light);
+  padding: var(--spacing-xl);
+}
+
+.page-container h1 {
+  margin-bottom: var(--spacing-xl);
+  color: var(--primary);
+}
+
+.content {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: var(--spacing-lg);
+}
+
+.no-data {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--secondary);
+  font-size: 1.1rem;
+}
+
+/* ==================== Events Grid ==================== */
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.event-card {
+  background: white;
+  border: 1px solid var(--gray);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  transition: var(--transition);
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.event-card h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--primary);
+}
+
+.event-card .description {
+  color: var(--secondary);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.9rem;
+}
+
+.event-info {
+  background-color: var(--light);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+}
+
+.event-info p {
+  margin: var(--spacing-sm) 0;
+}
+
+/* ==================== Responsive ==================== */
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: var(--spacing-md);
+  }
+
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .content {
+    padding: var(--spacing-md);
+  }
+}
