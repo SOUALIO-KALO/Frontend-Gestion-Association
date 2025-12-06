@@ -12,8 +12,8 @@ export const authService = {
   changePassword: (currentPassword, newPassword) =>
     api.put("/auth/change-password", { currentPassword, newPassword }),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (token, newPassword) =>
-    api.post("/auth/reset-password", { token, newPassword }),
+  resetPassword: (token, motDePasse, confirmMotDePasse) =>
+    api.post("/auth/reset-password", { token, motDePasse, confirmMotDePasse }),
 };
 
 // ==================== MEMBRES ====================
@@ -91,9 +91,9 @@ export const cotisationService = {
   // Statistiques
   getStatistiques: () => api.get("/cotisations/statistiques"),
 
-  // Générer PDF
+  // Générer PDF du reçu
   generatePDF: (id) =>
-    api.get(`/cotisations/generer-pdf/${id}`, { responseType: "blob" }),
+    api.get(`/cotisations/${id}/recu`, { responseType: "blob" }),
 
   // Alertes d'expiration
   getAlertes: () => api.get("/cotisations/alertes"),
@@ -103,8 +103,11 @@ export const cotisationService = {
 
 export const evenementService = {
   // Liste avec pagination
-  getAllEvenements: (page = 1, limit = 10) =>
-    api.get(`/evenements?page=${page}&limit=${limit}`),
+  getAllEvenements: (page = 1, limit = 10, aVenir = false) => {
+    const params = new URLSearchParams({ page, limit });
+    if (aVenir) params.append("aVenir", "true");
+    return api.get(`/evenements?${params}`);
+  },
 
   // Récupérer un événement
   getEvenementById: (id) => api.get(`/evenements/${id}`),
@@ -117,4 +120,39 @@ export const evenementService = {
 
   // Supprimer un événement
   deleteEvenement: (id) => api.delete(`/evenements/${id}`),
+
+  // Calendrier
+  getCalendrier: (mois, annee) =>
+    api.get(`/evenements/calendrier?mois=${mois}&annee=${annee}`),
+
+  // Participants
+  getParticipants: (id) => api.get(`/evenements/${id}/participants`),
+
+  // Inscription
+  inscrire: (id) => api.post(`/evenements/${id}/inscription`),
+
+  // Désinscription
+  desinscrire: (id) => api.delete(`/evenements/${id}/inscription`),
+
+  // Statistiques
+  getStatistiques: () => api.get("/evenements/statistiques"),
+};
+
+// ==================== DASHBOARD ====================
+
+export const dashboardService = {
+  // Statistiques globales pour le dashboard
+  getStats: async () => {
+    const [membresStats, cotisationsStats, evenementsStats] = await Promise.all([
+      api.get("/membres/statistiques").catch(() => ({ data: { data: {} } })),
+      api.get("/cotisations/statistiques").catch(() => ({ data: { data: {} } })),
+      api.get("/evenements/statistiques").catch(() => ({ data: { data: {} } })),
+    ]);
+
+    return {
+      membres: membresStats.data.data,
+      cotisations: cotisationsStats.data.data,
+      evenements: evenementsStats.data.data,
+    };
+  },
 };

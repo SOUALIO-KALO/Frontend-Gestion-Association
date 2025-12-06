@@ -65,16 +65,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (nom, prenom, email, motDePasse) => {
+  const register = async (data) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await authService.register({
-        nom,
-        prenom,
-        email,
-        motDePasse,
-      });
+      const response = await authService.register(data);
       return response.data;
     } catch (err) {
       const errorMsg =
