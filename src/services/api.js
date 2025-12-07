@@ -1,8 +1,9 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
+  : "http://localhost:3001/api";
 
 // Créer l'instance axios avec configuration de base
 const api = axios.create({
@@ -42,10 +43,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Ajouter un timestamp pour mesurer la durée
     config.metadata = { startTime: new Date() };
-    
+
     return config;
   },
   (error) => {
@@ -65,7 +66,11 @@ api.interceptors.response.use(
     // Log du temps de réponse en développement
     if (import.meta.env.DEV && response.config.metadata) {
       const duration = new Date() - response.config.metadata.startTime;
-      console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms`);
+      console.log(
+        `✅ ${response.config.method?.toUpperCase()} ${
+          response.config.url
+        } - ${duration}ms`
+      );
     }
     return response;
   },
@@ -74,11 +79,15 @@ api.interceptors.response.use(
 
     // Log de l'erreur
     if (import.meta.env.DEV) {
-      const duration = originalRequest?.metadata 
-        ? new Date() - originalRequest.metadata.startTime 
+      const duration = originalRequest?.metadata
+        ? new Date() - originalRequest.metadata.startTime
         : 0;
-      console.error(`❌ ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} - ${duration}ms`, 
-        error.response?.data || error.message);
+      console.error(
+        `❌ ${originalRequest?.method?.toUpperCase()} ${
+          originalRequest?.url
+        } - ${duration}ms`,
+        error.response?.data || error.message
+      );
     }
 
     // Erreur réseau
@@ -86,7 +95,9 @@ api.interceptors.response.use(
       if (error.code === "ECONNABORTED") {
         toast.error("La requête a pris trop de temps. Veuillez réessayer.");
       } else if (error.message === "Network Error") {
-        toast.error("Impossible de contacter le serveur. Vérifiez votre connexion.");
+        toast.error(
+          "Impossible de contacter le serveur. Vérifiez votre connexion."
+        );
       }
       return Promise.reject(error);
     }
@@ -98,25 +109,28 @@ api.interceptors.response.use(
       // Si le code est TOKEN_EXPIRED, essayer de rafraîchir le token
       if (data?.code === "TOKEN_EXPIRED") {
         const refreshToken = localStorage.getItem("refreshToken");
-        
+
         if (refreshToken && !isRefreshing) {
           isRefreshing = true;
           originalRequest._retry = true;
 
           try {
-            const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-              refreshToken,
-            });
+            const response = await axios.post(
+              `${API_BASE_URL}/auth/refresh-token`,
+              {
+                refreshToken,
+              }
+            );
 
             const { token: newToken } = response.data;
             localStorage.setItem("token", newToken);
-            
+
             api.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
             originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-            
+
             processQueue(null, newToken);
             isRefreshing = false;
-            
+
             return api(originalRequest);
           } catch (refreshError) {
             processQueue(refreshError, null);
@@ -159,7 +173,9 @@ api.interceptors.response.use(
 
     // Erreur 500+ - Erreur serveur
     if (status >= 500) {
-      toast.error("Une erreur serveur s'est produite. Veuillez réessayer plus tard.");
+      toast.error(
+        "Une erreur serveur s'est produite. Veuillez réessayer plus tard."
+      );
     }
 
     return Promise.reject(error);
@@ -171,11 +187,11 @@ api.interceptors.response.use(
  */
 const handleAuthError = () => {
   if (isRedirecting) return;
-  
+
   isRedirecting = true;
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");
-  
+
   // Ne pas afficher de toast si on est déjà sur la page de login
   if (!window.location.pathname.includes("/login")) {
     toast.error("Votre session a expiré. Veuillez vous reconnecter.");
