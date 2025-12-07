@@ -281,7 +281,7 @@ export default function CotisationsPage() {
                     {format(new Date(cotisation.datePaiement), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {cotisation.montant} €
+                    {cotisation.montant} FCFA
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {cotisation.modePaiement?.replace("_", " ")}
@@ -350,7 +350,7 @@ export default function CotisationsPage() {
           />
 
           <Input
-            label="Montant (€)"
+            label="Montant (FCFA)"
             type="number"
             step="0.01"
             min="0"
