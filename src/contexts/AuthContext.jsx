@@ -5,7 +5,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Changé à true au départ
   const [error, setError] = useState(null);
 
   // Charger le profil utilisateur si token existe
@@ -13,6 +13,8 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     if (token) {
       loadProfile();
+    } else {
+      setLoading(false); // Important : arrêter le loading si pas de token
     }
   }, []);
 
