@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Mail, Lock, Phone, Eye, EyeOff, UserPlus } from "lucide-react";
-import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { extractFormErrors } from "../utils/errorHandler";
+import "../styles/auth.css";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, loading } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { register, loading, error } = useAuth();
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -18,39 +14,32 @@ export default function RegisterPage() {
     motDePasse: "",
     confirmMotDePasse: "",
   });
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: null }));
-    }
   };
 
   const validateForm = () => {
-    const errors = {};
-    
     if (!formData.nom.trim()) {
-      errors.nom = "Le nom est requis";
+      setFormError("Le nom est requis");
+      return false;
     }
     if (!formData.prenom.trim()) {
-      errors.prenom = "Le prénom est requis";
+      setFormError("Le prénom est requis");
+      return false;
     }
     if (!formData.email.trim()) {
-      errors.email = "L'email est requis";
+      setFormError("L'email est requis");
+      return false;
     }
     if (formData.motDePasse.length < 8) {
-      errors.motDePasse = "Le mot de passe doit contenir au moins 8 caractères";
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.motDePasse)) {
-      errors.motDePasse = "Le mot de passe doit contenir une majuscule, une minuscule et un chiffre";
+      setFormError("Le mot de passe doit contenir au moins 8 caractères");
+      return false;
     }
     if (formData.motDePasse !== formData.confirmMotDePasse) {
-      errors.confirmMotDePasse = "Les mots de passe ne correspondent pas";
-    }
-    
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+      setFormError("Les mots de passe ne correspondent pas");
       return false;
     }
     return true;
@@ -58,26 +47,125 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFieldErrors({});
+    setFormError("");
 
     if (!validateForm()) return;
 
     try {
-      const { confirmMotDePasse, ...dataToSend } = formData;
-      await register(dataToSend);
-      toast.success("Inscription réussie ! Vous pouvez vous connecter.");
+      await register(
+        formData.nom,
+        formData.prenom,
+        formData.email,
+        formData.motDePasse
+      );
       navigate("/login");
     } catch (err) {
-      const { message, fieldErrors: errors } = extractFormErrors(err, "Erreur lors de l'inscription");
-      toast.error(message);
-      setFieldErrors(errors);
+      setFormError(err.response?.data?.message || "Erreur lors de l'inscription");
     }
   };
 
-  const InputField = ({ icon: Icon, label, name, type = "text", placeholder, required = true, hint }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h1>Inscription</h1>
+        <p className="subtitle">Créez un compte</p>
+
+        {(formError || error) && (
+          <div className="alert alert-error">{formError || error}</div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="nom">Nom</label>
+            <input
+              type="text"
+              id="nom"
+              name="nom"
+              value={formData.nom}
+              onChange={handleChange}
+              required
+              placeholder="Votre nom"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="prenom">Prénom</label>
+            <input
+              type="text"
+              id="prenom"
+              name="prenom"
+              value={formData.prenom}
+              onChange={handleChange}
+              required
+              placeholder="Votre prénom"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="email@example.com"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="telephone">Téléphone (optionnel)</label>
+            <input
+              type="tel"
+              id="telephone"
+              name="telephone"
+              value={formData.telephone}
+              onChange={handleChange}
+              placeholder="0601020304"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="motDePasse">Mot de passe</label>
+            <input
+              type="password"
+              id="motDePasse"
+              name="motDePasse"
+              value={formData.motDePasse}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmMotDePasse">Confirmer le mot de passe</label>
+            <input
+              type="password"
+              id="confirmMotDePasse"
+              name="confirmMotDePasse"
+              value={formData.confirmMotDePasse}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? "Inscription en cours..." : "S'inscrire"}
+          </button>
+        </form>
+
+        <div className="auth-links">
+          <p>
+            Déjà inscrit? <Link to="/login">Se connecter</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
       </label>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
