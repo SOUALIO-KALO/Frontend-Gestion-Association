@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/auth.css";
 
@@ -56,10 +57,23 @@ export default function RegisterPage() {
     try {
       const { confirmMotDePasse, ...dataToSend } = formData;
       await register(dataToSend);
+      toast.success("Inscription réussie ! Vous pouvez vous connecter.");
       navigate("/login");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Erreur lors de l'inscription";
+      // Récupérer le message d'erreur du backend ou un message par défaut
+      let errorMessage = "Erreur lors de l'inscription";
+      
+      if (err.response?.data?.message) {
+        // Erreur du backend
+        errorMessage = err.response.data.message;
+      } else if (err.message === "Network Error") {
+        errorMessage = "Impossible de contacter le serveur. Vérifiez votre connexion.";
+      } else if (err.code === "ECONNABORTED") {
+        errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+      }
+      
       setFormError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
