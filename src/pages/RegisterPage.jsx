@@ -5,7 +5,8 @@ import "../styles/auth.css";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, loading, error } = useAuth();
+  const { register, error } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -51,6 +52,7 @@ export default function RegisterPage() {
 
     if (!validateForm()) return;
 
+    setLoading(true);
     try {
       await register(
         formData.nom,
@@ -61,6 +63,8 @@ export default function RegisterPage() {
       navigate("/login");
     } catch (err) {
       setFormError(err.response?.data?.message || "Erreur lors de l'inscription");
+    } finally {
+      setLoading(false);
     }
   };
 
