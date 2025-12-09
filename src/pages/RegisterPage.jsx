@@ -60,16 +60,27 @@ export default function RegisterPage() {
       toast.success("Inscription réussie ! Vous pouvez vous connecter.");
       navigate("/login");
     } catch (err) {
+      // Debug: afficher l'erreur complète dans la console
+      console.error("Erreur inscription:", err);
+      console.error("err.response:", err.response);
+      console.error("err.message:", err.message);
+      
       // Récupérer le message d'erreur du backend ou un message par défaut
       let errorMessage = "Erreur lors de l'inscription";
       
       if (err.response?.data?.message) {
         // Erreur du backend
         errorMessage = err.response.data.message;
+      } else if (err.response?.data?.errors) {
+        // Erreurs de validation
+        const firstError = err.response.data.errors[0];
+        errorMessage = firstError?.message || firstError?.msg || "Erreur de validation";
       } else if (err.message === "Network Error") {
         errorMessage = "Impossible de contacter le serveur. Vérifiez votre connexion.";
       } else if (err.code === "ECONNABORTED") {
         errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+      } else if (err.message) {
+        errorMessage = err.message;
       }
       
       setFormError(errorMessage);
