@@ -54,15 +54,12 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(
-        formData.nom,
-        formData.prenom,
-        formData.email,
-        formData.motDePasse
-      );
+      const { confirmMotDePasse, ...dataToSend } = formData;
+      await register(dataToSend);
       navigate("/login");
     } catch (err) {
-      setFormError(err.response?.data?.message || "Erreur lors de l'inscription");
+      const errorMessage = err.response?.data?.message || "Erreur lors de l'inscription";
+      setFormError(errorMessage);
     } finally {
       setLoading(false);
     }
