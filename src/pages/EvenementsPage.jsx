@@ -133,9 +133,19 @@ export default function EvenementsPage() {
   };
 
   const handleDesinscrire = async (eventId) => {
+    setDesinscribing(eventId);
     try {
       await evenementService.desinscrire(eventId);
-      toast.success("Désinscription effectuée");
+      toast.success(
+        <div className="flex items-center gap-2">
+          <X className="w-5 h-5 text-orange-500" />
+          <div>
+            <p className="font-semibold">Désinscription effectuée</p>
+            <p className="text-sm">Vous n'êtes plus inscrit à cet événement</p>
+          </div>
+        </div>,
+        { duration: 4000 }
+      );
       loadEvenements();
       if (selectedEvent) {
         const response = await evenementService.getEvenementById(eventId);
@@ -143,6 +153,8 @@ export default function EvenementsPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Erreur lors de la désinscription");
+    } finally {
+      setDesinscribing(null);
     }
   };
 
@@ -174,6 +186,7 @@ export default function EvenementsPage() {
   };
 
   const [inscribing, setInscribing] = useState(null);
+  const [desinscribing, setDesinscribing] = useState(null);
 
   // Calendar rendering
   const renderCalendar = () => {
@@ -328,6 +341,8 @@ export default function EvenementsPage() {
                 size="sm"
                 onClick={() => handleDesinscrire(event.id)}
                 className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                loading={desinscribing === event.id}
+                disabled={desinscribing === event.id}
               >
                 Se désinscrire
               </Button>
@@ -571,12 +586,21 @@ export default function EvenementsPage() {
                 Fermer
               </Button>
               {!isAdmin && !isUserInscrit(selectedEvent) && selectedEvent.placesRestantes > 0 && (
-                <Button onClick={() => handleInscrire(selectedEvent.id)}>
-                  S'inscrire
+                <Button 
+                  onClick={() => handleInscrire(selectedEvent.id)}
+                  loading={inscribing === selectedEvent.id}
+                  disabled={inscribing === selectedEvent.id}
+                >
+                  S'inscrire à cet événement
                 </Button>
               )}
               {!isAdmin && isUserInscrit(selectedEvent) && (
-                <Button variant="danger" onClick={() => handleDesinscrire(selectedEvent.id)}>
+                <Button 
+                  variant="danger" 
+                  onClick={() => handleDesinscrire(selectedEvent.id)}
+                  loading={desinscribing === selectedEvent.id}
+                  disabled={desinscribing === selectedEvent.id}
+                >
                   Se désinscrire
                 </Button>
               )}

@@ -95,8 +95,11 @@ export const cotisationService = {
   generatePDF: (id) =>
     api.get(`/cotisations/${id}/recu`, { responseType: "blob" }),
 
-  // Alertes d'expiration
-  getAlertes: () => api.get("/cotisations/alertes"),
+  // Alertes d'expiration (10 jours)
+  getAlertes: (jours = 10) => api.get(`/cotisations/alertes?jours=${jours}`),
+  
+  // Envoyer un rappel de cotisation par email
+  envoyerRappel: (cotisationId) => api.post(`/cotisations/${cotisationId}/rappel`),
 };
 
 // ==================== ÉVÉNEMENTS ====================
