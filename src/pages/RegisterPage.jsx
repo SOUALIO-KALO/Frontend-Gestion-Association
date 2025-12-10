@@ -93,20 +93,33 @@ export default function RegisterPage() {
       }
     } catch (err) {
       console.error("Erreur inscription:", err);
+      console.error("Response data:", err.response?.data);
+      console.error("Status:", err.response?.status);
       
       let errorMessage = "Erreur lors de l'inscription";
+      const status = err.response?.status;
+      const data = err.response?.data;
       
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.data?.errors) {
-        const firstError = err.response.data.errors[0];
-        errorMessage = firstError?.message || firstError?.msg || "Erreur de validation";
+      // Gérer les codes de statut HTTP spécifiques
+      if (status === 409) {
+        // Email déjà utilisé
+        errorMessage = data?.message || "Cette adresse email est déjà utilisée";
+      } else if (status === 422 || status === 400) {
+        // Erreur de validation
+        if (data?.errors?.length > 0) {
+          errorMessage = data.errors[0]?.message || data.errors[0]?.msg || "Erreur de validation";
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      } else if (status >= 500) {
+        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+      } else if (data?.message) {
+        // Message d'erreur du backend
+        errorMessage = data.message;
       } else if (err.message === "Network Error") {
         errorMessage = "Impossible de contacter le serveur. Vérifiez votre connexion.";
       } else if (err.code === "ECONNABORTED") {
         errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
-      } else if (err.message) {
-        errorMessage = err.message;
       }
       
       setFormError(errorMessage);
