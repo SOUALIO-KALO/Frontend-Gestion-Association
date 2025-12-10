@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Download, Filter, FileText, AlertTriangle, Mail, Loader2 } from "lucide-react";
+import { Plus, Download, Filter, FileText, AlertTriangle, Mail, Loader2, Edit } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
@@ -52,6 +52,8 @@ export default function CotisationsPage() {
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCotisation, setSelectedCotisation] = useState(null);
   const [membres, setMembres] = useState([]);
   const [formData, setFormData] = useState({
     membreId: "",
@@ -165,6 +167,38 @@ export default function CotisationsPage() {
   const openCreateModal = () => {
     loadMembres();
     setShowCreateModal(true);
+  };
+
+  const openEditModal = (cotisation) => {
+    setSelectedCotisation(cotisation);
+    setFormData({
+      membreId: cotisation.membreId,
+      datePaiement: format(new Date(cotisation.datePaiement), "yyyy-MM-dd"),
+      dateExpiration: format(new Date(cotisation.dateExpiration), "yyyy-MM-dd"),
+      montant: cotisation.montant.toString(),
+      modePaiement: cotisation.modePaiement,
+      periode: cotisation.periode || "",
+      statut: cotisation.statut,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      await cotisationService.updateCotisation(selectedCotisation.id, formData);
+      toast.success("Cotisation modifiée avec succès");
+      setShowEditModal(false);
+      setSelectedCotisation(null);
+      resetForm();
+      loadCotisations();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Erreur lors de la modification");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Validation du formulaire de création
@@ -343,13 +377,22 @@ export default function CotisationsPage() {
                     {format(new Date(cotisation.dateExpiration), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
-                    <button
-                      onClick={() => handleDownloadPDF(cotisation.id)}
-                      className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
-                      title="Télécharger reçu PDF"
-                    >
-                      <FileText className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => openEditModal(cotisation)}
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadPDF(cotisation.id)}
+                        className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                        title="Télécharger reçu PDF"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -464,6 +507,106 @@ export default function CotisationsPage() {
             </Button>
             <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
               Créer la cotisation
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedCotisation(null);
+          resetForm();
+        }}
+        title="Modifier la cotisation"
+        size="md"
+      >
+        <form onSubmit={handleEditSubmit}>
+          {selectedCotisation && (
+            <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 mb-4">
+              <p className="font-medium">
+                {selectedCotisation.membre?.prenom} {selectedCotisation.membre?.nom}
+              </p>
+              <p className="text-xs">{selectedCotisation.membre?.email}</p>
+            </div>
+          )}
+
+          <Input
+            label="Période concernée (MM/AAAA)"
+            type="text"
+            placeholder="Ex: 01/2024"
+            value={formData.periode || ""}
+            onChange={(e) => {
+              let value = e.target.value.replace(/[^0-9/]/g, '');
+              if (value.length === 2 && !value.includes('/')) {
+                value = value + '/';
+              }
+              if (value.length <= 7) {
+                setFormData({ ...formData, periode: value });
+              }
+            }}
+          />
+
+          <Input
+            label="Date de paiement"
+            type="date"
+            value={formData.datePaiement}
+            onChange={(e) => setFormData({ ...formData, datePaiement: e.target.value })}
+            required
+          />
+
+          <Input
+            label="Date d'expiration"
+            type="date"
+            value={formData.dateExpiration}
+            onChange={(e) => setFormData({ ...formData, dateExpiration: e.target.value })}
+            required
+          />
+
+          <Input
+            label="Montant (FCFA)"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.montant}
+            onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
+            required
+          />
+
+          <Select
+            label="Mode de paiement"
+            options={MODES_PAIEMENT}
+            value={formData.modePaiement}
+            onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
+          />
+
+          <Select
+            label="Statut"
+            options={[
+              { value: "A_JOUR", label: "À jour" },
+              { value: "EXPIRE", label: "Expiré" },
+              { value: "EN_ATTENTE", label: "En attente" },
+            ]}
+            value={formData.statut}
+            onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+          />
+
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedCotisation(null);
+                resetForm();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" loading={submitting} disabled={submitting}>
+              Enregistrer
             </Button>
           </ModalFooter>
         </form>
