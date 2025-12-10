@@ -23,6 +23,12 @@ export default function LoginPage() {
     }
   };
 
+  // Validation du formulaire
+  const isFormValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(formData.email) && formData.motDePasse.length >= 1;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFieldErrors({});
@@ -146,7 +152,7 @@ export default function LoginPage() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isFormValid()}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (

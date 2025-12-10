@@ -179,6 +179,17 @@ export default function EvenementsPage() {
     });
   };
 
+  // Validation du formulaire
+  const isFormValid = () => {
+    return (
+      formData.titre.trim().length >= 3 &&
+      formData.dateDebut &&
+      formData.lieu.trim().length >= 2 &&
+      formData.placesTotal &&
+      parseInt(formData.placesTotal) > 0
+    );
+  };
+
   const isUserInscrit = (event) => {
     return event.inscriptions?.some(
       (i) => i.membreId === user?.id && i.statut === "CONFIRMEE"
@@ -497,7 +508,7 @@ export default function EvenementsPage() {
               >
                 Annuler
               </Button>
-              <Button type="submit" loading={submitting}>
+              <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
                 Créer l'événement
               </Button>
             </ModalFooter>

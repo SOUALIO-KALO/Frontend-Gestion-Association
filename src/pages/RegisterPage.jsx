@@ -72,6 +72,20 @@ export default function RegisterPage() {
     return true;
   };
 
+  // Validation rapide pour le bouton
+  const isFormValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    return (
+      formData.nom.trim().length >= 2 &&
+      formData.prenom.trim().length >= 2 &&
+      emailRegex.test(formData.email) &&
+      formData.motDePasse.length >= 8 &&
+      passwordRegex.test(formData.motDePasse) &&
+      formData.motDePasse === formData.confirmMotDePasse
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -236,7 +250,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          <button type="submit" disabled={loading || !isFormValid()} className="btn btn-primary">
             {loading ? "Inscription en cours..." : "S'inscrire"}
           </button>
         </form>

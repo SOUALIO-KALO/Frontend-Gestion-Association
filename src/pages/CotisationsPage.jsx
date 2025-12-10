@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Download, Filter, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Download, Filter, FileText, AlertTriangle, Mail, Loader2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
@@ -62,6 +62,7 @@ export default function CotisationsPage() {
     periode: format(new Date(), "MM/yyyy"),
   });
   const [submitting, setSubmitting] = useState(false);
+  const [sendingRappel, setSendingRappel] = useState(null);
 
   const loadCotisations = useCallback(async () => {
     try {
@@ -83,10 +84,22 @@ export default function CotisationsPage() {
 
   const loadAlertes = async () => {
     try {
-      const response = await cotisationService.getAlertes();
+      const response = await cotisationService.getAlertes(10);
       setAlertes(response.data.data || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleEnvoyerRappel = async (cotisationId, membreNom) => {
+    setSendingRappel(cotisationId);
+    try {
+      await cotisationService.envoyerRappel(cotisationId);
+      toast.success(`Rappel envoyé à ${membreNom}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erreur lors de l'envoi du rappel");
+    } finally {
+      setSendingRappel(null);
     }
   };
 
@@ -154,6 +167,18 @@ export default function CotisationsPage() {
     setShowCreateModal(true);
   };
 
+  // Validation du formulaire de création
+  const isFormValid = () => {
+    return (
+      formData.membreId &&
+      formData.datePaiement &&
+      formData.dateExpiration &&
+      formData.montant &&
+      parseFloat(formData.montant) > 0 &&
+      formData.modePaiement
+    );
+  };
+
   // Fonction pour formater le nom du mois à partir de la période
   const getMonthName = (periode) => {
     if (!periode || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(periode)) return '';
@@ -211,8 +236,18 @@ export default function CotisationsPage() {
                       })}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline">
-                    Envoyer rappel
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEnvoyerRappel(alerte.id, `${alerte.membre?.prenom} ${alerte.membre?.nom}`)}
+                    disabled={sendingRappel === alerte.id}
+                  >
+                    {sendingRappel === alerte.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Mail className="w-4 h-4" />
+                    )}
+                    {sendingRappel === alerte.id ? 'Envoi...' : 'Rappel'}
                   </Button>
                 </div>
               ))}
@@ -427,7 +462,7 @@ export default function CotisationsPage() {
             >
               Annuler
             </Button>
-            <Button type="submit" loading={submitting}>
+            <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
               Créer la cotisation
             </Button>
           </ModalFooter>

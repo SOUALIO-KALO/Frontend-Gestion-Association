@@ -167,6 +167,18 @@ export default function MembresPage() {
     setShowDeleteModal(true);
   };
 
+  // Validation du formulaire
+  const isFormValid = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return (
+      formData.nom.trim().length >= 2 &&
+      formData.prenom.trim().length >= 2 &&
+      emailRegex.test(formData.email) &&
+      formData.motDePasse.length >= 8 &&
+      formData.statut
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -375,7 +387,7 @@ export default function MembresPage() {
             >
               Annuler
             </Button>
-            <Button type="submit" loading={submitting}>
+            <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
               Créer le membre
             </Button>
           </ModalFooter>
