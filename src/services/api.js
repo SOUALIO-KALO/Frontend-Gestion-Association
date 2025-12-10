@@ -6,9 +6,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
   : "http://localhost:3001/api";
 
 // Créer l'instance axios avec configuration de base
+// Timeout augmenté à 60s pour gérer le "cold start" de Render (free tier)
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 secondes timeout
+  timeout: 60000, // 60 secondes timeout
   headers: {
     "Content-Type": "application/json",
   },
