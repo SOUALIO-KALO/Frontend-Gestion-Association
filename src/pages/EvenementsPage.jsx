@@ -107,9 +107,19 @@ export default function EvenementsPage() {
   };
 
   const handleInscrire = async (eventId) => {
+    setInscribing(eventId);
     try {
       await evenementService.inscrire(eventId);
-      toast.success("Inscription confirmée !");
+      toast.success(
+        <div className="flex items-center gap-2">
+          <Check className="w-5 h-5 text-green-500" />
+          <div>
+            <p className="font-semibold">Inscription réussie !</p>
+            <p className="text-sm">Vous êtes inscrit à cet événement</p>
+          </div>
+        </div>,
+        { duration: 4000 }
+      );
       loadEvenements();
       if (selectedEvent) {
         const response = await evenementService.getEvenementById(eventId);
@@ -117,6 +127,8 @@ export default function EvenementsPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Erreur lors de l'inscription");
+    } finally {
+      setInscribing(null);
     }
   };
 
@@ -160,6 +172,8 @@ export default function EvenementsPage() {
       (i) => i.membreId === user?.id && i.statut === "CONFIRMEE"
     );
   };
+
+  const [inscribing, setInscribing] = useState(null);
 
   // Calendar rendering
   const renderCalendar = () => {
@@ -255,9 +269,14 @@ export default function EvenementsPage() {
         <CardContent className="p-5">
           <div className="flex justify-between items-start mb-3">
             <h3 className="font-semibold text-lg text-gray-900">{event.titre}</h3>
-            {isComplete && (
-              <Badge variant="danger">Complet</Badge>
-            )}
+            <div className="flex gap-1">
+              {inscrit && (
+                <Badge variant="success">Inscrit</Badge>
+              )}
+              {isComplete && !inscrit && (
+                <Badge variant="danger">Complet</Badge>
+              )}
+            </div>
           </div>
 
           {event.description && (
@@ -297,16 +316,18 @@ export default function EvenementsPage() {
                 size="sm"
                 onClick={() => handleInscrire(event.id)}
                 className="flex-1"
+                loading={inscribing === event.id}
+                disabled={inscribing === event.id}
               >
                 S'inscrire
               </Button>
             )}
             {!isAdmin && inscrit && (
               <Button
-                variant="danger"
+                variant="outline"
                 size="sm"
                 onClick={() => handleDesinscrire(event.id)}
-                className="flex-1"
+                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
               >
                 Se désinscrire
               </Button>

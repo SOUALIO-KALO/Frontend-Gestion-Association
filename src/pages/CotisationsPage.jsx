@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Download, Filter, FileText, AlertTriangle } from "lucide-react";
-import { format, addYears } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { cotisationService, membreService } from "../services/authService";
@@ -58,6 +58,7 @@ export default function CotisationsPage() {
     datePaiement: format(new Date(), "yyyy-MM-dd"),
     montant: "50",
     modePaiement: "ESPECES",
+    periode: format(new Date(), "MM/yyyy"),
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -142,6 +143,7 @@ export default function CotisationsPage() {
       datePaiement: format(new Date(), "yyyy-MM-dd"),
       montant: "50",
       modePaiement: "ESPECES",
+      periode: format(new Date(), "MM/yyyy"),
     });
   };
 
@@ -150,10 +152,13 @@ export default function CotisationsPage() {
     setShowCreateModal(true);
   };
 
-  // Calculer la date d'expiration preview
-  const expirationPreview = formData.datePaiement
-    ? format(addYears(new Date(formData.datePaiement), 1), "dd MMMM yyyy", { locale: fr })
-    : "";
+  // Fonction pour formater le nom du mois à partir de la période
+  const getMonthName = (periode) => {
+    if (!periode || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(periode)) return '';
+    const [mois, annee] = periode.split('/');
+    const date = new Date(parseInt(annee), parseInt(mois) - 1, 1);
+    return format(date, "MMMM yyyy", { locale: fr });
+  };
 
   return (
     <div className="space-y-6">
@@ -261,6 +266,7 @@ export default function CotisationsPage() {
             <TableHead>
               <TableRow>
                 <TableHeader>Membre</TableHeader>
+                <TableHeader>Période</TableHeader>
                 <TableHeader>Date paiement</TableHeader>
                 <TableHeader>Montant</TableHeader>
                 <TableHeader className="hidden sm:table-cell">Mode</TableHeader>
@@ -276,6 +282,11 @@ export default function CotisationsPage() {
                     <div className="font-medium">
                       {cotisation.membre?.prenom} {cotisation.membre?.nom}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium text-blue-600">
+                      {cotisation.periode || "-"}
+                    </span>
                   </TableCell>
                   <TableCell>
                     {format(new Date(cotisation.datePaiement), "dd/MM/yyyy")}
@@ -342,6 +353,27 @@ export default function CotisationsPage() {
           />
 
           <Input
+            label="Période concernée (MM/AAAA)"
+            type="text"
+            placeholder="Ex: 01/2024"
+            value={formData.periode}
+            onChange={(e) => {
+              // Format automatique: ajouter le / après 2 chiffres
+              let value = e.target.value.replace(/[^0-9/]/g, '');
+              if (value.length === 2 && !value.includes('/')) {
+                value = value + '/';
+              }
+              if (value.length <= 7) {
+                setFormData({ ...formData, periode: value });
+              }
+            }}
+            required
+          />
+          <p className="text-xs text-gray-500 -mt-3 mb-4">
+            Mois et année de la cotisation (ex: 01/2024 pour janvier 2024)
+          </p>
+
+          <Input
             label="Date de paiement"
             type="date"
             value={formData.datePaiement}
@@ -366,9 +398,10 @@ export default function CotisationsPage() {
             onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
           />
 
-          {expirationPreview && (
+          {formData.periode && /^(0[1-9]|1[0-2])\/\d{4}$/.test(formData.periode) && (
             <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 mb-4">
-              Date d'expiration prévue : <strong>{expirationPreview}</strong>
+              <p>Période : <strong>{getMonthName(formData.periode)}</strong></p>
+              <p className="text-xs mt-1">Cotisation mensuelle pour {getMonthName(formData.periode)}</p>
             </div>
           )}
 
