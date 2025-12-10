@@ -141,6 +141,13 @@ export const evenementService = {
   getStatistiques: () => api.get("/evenements/statistiques"),
 };
 
+// ==================== ADMIN ====================
+
+export const adminService = {
+  // Réinitialiser la base de données avec des données de test
+  seedDatabase: () => api.post("/admin/seed", { confirmReset: "CONFIRMER_RESET_DATABASE" }),
+};
+
 // ==================== DASHBOARD ====================
 
 export const dashboardService = {

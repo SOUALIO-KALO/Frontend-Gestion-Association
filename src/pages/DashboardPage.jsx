@@ -17,7 +17,8 @@ import {
   Legend,
 } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
-import { dashboardService, evenementService, cotisationService } from "../services/authService";
+import { dashboardService, evenementService, cotisationService, adminService } from "../services/authService";
+import toast from "react-hot-toast";
 import { StatCard, EventCard, AlertList } from "../components/dashboard";
 import { Loading, Card, CardHeader, CardTitle, CardContent, Badge, Button } from "../components/ui";
 
@@ -32,10 +33,33 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState([]);
   const [mesCotisations, setMesCotisations] = useState([]);
   const [mesInscriptions, setMesInscriptions] = useState([]);
+  const [seeding, setSeeding] = useState(false);
+  const [showSeedConfirm, setShowSeedConfirm] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
   }, [isAdmin]);
+
+  const handleSeedDatabase = async () => {
+    setSeeding(true);
+    try {
+      const response = await adminService.seedDatabase();
+      toast.success(
+        <div>
+          <p className="font-semibold">Base de données réinitialisée !</p>
+          <p className="text-sm">{response.data.data.membres} membres créés</p>
+        </div>,
+        { duration: 5000 }
+      );
+      setShowSeedConfirm(false);
+      // Recharger les données
+      loadDashboardData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erreur lors du seed");
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -235,6 +259,60 @@ export default function DashboardPage() {
               title="Cotisations expirant bientôt"
             />
           </div>
+
+          {/* Admin Tools - Seed Database */}
+          <Card className="border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="text-orange-800">Outils d'administration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Réinitialiser la base de données</p>
+                  <p className="text-sm text-gray-600">
+                    Supprime toutes les données et charge les données de test
+                  </p>
+                </div>
+                {!showSeedConfirm ? (
+                  <Button 
+                    variant="outline" 
+                    className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                    onClick={() => setShowSeedConfirm(true)}
+                  >
+                    Réinitialiser
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => setShowSeedConfirm(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button 
+                      variant="danger"
+                      size="sm"
+                      onClick={handleSeedDatabase}
+                      loading={seeding}
+                    >
+                      Confirmer la suppression
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {showSeedConfirm && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800 font-medium">
+                    ⚠️ Attention : Cette action supprimera TOUTES les données existantes !
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    Comptes de test créés : admin@association.fr / Password123!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       ) : (
         /* Member Dashboard */
