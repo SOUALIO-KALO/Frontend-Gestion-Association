@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Download, Filter, FileText, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { cotisationService, membreService } from "../services/authService";
@@ -56,6 +56,7 @@ export default function CotisationsPage() {
   const [formData, setFormData] = useState({
     membreId: "",
     datePaiement: format(new Date(), "yyyy-MM-dd"),
+    dateExpiration: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
     montant: "50",
     modePaiement: "ESPECES",
     periode: format(new Date(), "MM/yyyy"),
@@ -141,6 +142,7 @@ export default function CotisationsPage() {
     setFormData({
       membreId: "",
       datePaiement: format(new Date(), "yyyy-MM-dd"),
+      dateExpiration: format(addMonths(new Date(), 1), "yyyy-MM-dd"),
       montant: "50",
       modePaiement: "ESPECES",
       periode: format(new Date(), "MM/yyyy"),
@@ -353,7 +355,7 @@ export default function CotisationsPage() {
           />
 
           <Input
-            label="Période concernée (MM/AAAA)"
+            label="Période concernée (MM/AAAA) - Optionnel"
             type="text"
             placeholder="Ex: 01/2024"
             value={formData.periode}
@@ -367,10 +369,9 @@ export default function CotisationsPage() {
                 setFormData({ ...formData, periode: value });
               }
             }}
-            required
           />
           <p className="text-xs text-gray-500 -mt-3 mb-4">
-            Mois et année de la cotisation (ex: 01/2024 pour janvier 2024)
+            Mois et année de la cotisation mensuelle (ex: 01/2024 pour janvier 2024)
           </p>
 
           <Input
@@ -378,6 +379,14 @@ export default function CotisationsPage() {
             type="date"
             value={formData.datePaiement}
             onChange={(e) => setFormData({ ...formData, datePaiement: e.target.value })}
+            required
+          />
+
+          <Input
+            label="Date d'expiration"
+            type="date"
+            value={formData.dateExpiration}
+            onChange={(e) => setFormData({ ...formData, dateExpiration: e.target.value })}
             required
           />
 
@@ -398,10 +407,12 @@ export default function CotisationsPage() {
             onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
           />
 
-          {formData.periode && /^(0[1-9]|1[0-2])\/\d{4}$/.test(formData.periode) && (
-            <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 mb-4">
-              <p>Période : <strong>{getMonthName(formData.periode)}</strong></p>
-              <p className="text-xs mt-1">Cotisation mensuelle pour {getMonthName(formData.periode)}</p>
+          {formData.dateExpiration && (
+            <div className="p-3 bg-green-50 rounded-lg text-sm text-green-700 mb-4">
+              <p>Date d'expiration : <strong>{format(new Date(formData.dateExpiration), "dd MMMM yyyy", { locale: fr })}</strong></p>
+              {formData.periode && /^(0[1-9]|1[0-2])\/\d{4}$/.test(formData.periode) && (
+                <p className="text-xs mt-1">Période : {getMonthName(formData.periode)}</p>
+              )}
             </div>
           )}
 
