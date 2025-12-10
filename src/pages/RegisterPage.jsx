@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { register, error } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -18,9 +19,21 @@ export default function RegisterPage() {
   });
   const [formError, setFormError] = useState("");
 
+  // Redirection automatique après succès
+  useEffect(() => {
+    if (registrationSuccess) {
+      const timer = setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [registrationSuccess, navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Effacer les erreurs quand l'utilisateur modifie le formulaire
+    if (formError) setFormError("");
   };
 
   const validateForm = () => {
@@ -36,8 +49,20 @@ export default function RegisterPage() {
       setFormError("L'email est requis");
       return false;
     }
+    // Validation email basique
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setFormError("Format d'email invalide");
+      return false;
+    }
     if (formData.motDePasse.length < 8) {
       setFormError("Le mot de passe doit contenir au moins 8 caractères");
+      return false;
+    }
+    // Validation force du mot de passe
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(formData.motDePasse)) {
+      setFormError("Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre");
       return false;
     }
     if (formData.motDePasse !== formData.confirmMotDePasse) {
@@ -56,23 +81,24 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const { confirmMotDePasse, ...dataToSend } = formData;
-      await register(dataToSend);
-      toast.success("Inscription réussie ! Vous pouvez vous connecter.");
-      navigate("/login");
-    } catch (err) {
-      // Debug: afficher l'erreur complète dans la console
-      console.error("Erreur inscription:", err);
-      console.error("err.response:", err.response);
-      console.error("err.message:", err.message);
+      const response = await register(dataToSend);
       
-      // Récupérer le message d'erreur du backend ou un message par défaut
+      // Vérifier que l'inscription a réussi
+      if (response?.success || response?.data || response) {
+        setRegistrationSuccess(true);
+        toast.success("Inscription réussie ! Redirection vers la connexion...", {
+          duration: 3000,
+          icon: "🎉",
+        });
+      }
+    } catch (err) {
+      console.error("Erreur inscription:", err);
+      
       let errorMessage = "Erreur lors de l'inscription";
       
       if (err.response?.data?.message) {
-        // Erreur du backend
         errorMessage = err.response.data.message;
       } else if (err.response?.data?.errors) {
-        // Erreurs de validation
         const firstError = err.response.data.errors[0];
         errorMessage = firstError?.message || firstError?.msg || "Erreur de validation";
       } else if (err.message === "Network Error") {
@@ -89,6 +115,25 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  // Affichage du message de succès
+  if (registrationSuccess) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="success-message">
+            <div className="success-icon">✓</div>
+            <h1>Inscription réussie !</h1>
+            <p>Votre compte a été créé avec succès.</p>
+            <p className="redirect-notice">Redirection vers la page de connexion...</p>
+            <Link to="/login" className="btn btn-primary">
+              Se connecter maintenant
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container">
