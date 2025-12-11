@@ -103,12 +103,12 @@ export default function ResetPasswordPage() {
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-auto"
         >
           {show ? (
-            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
           ) : (
-            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" />
           )}
         </button>
       </div>
