@@ -80,7 +80,7 @@ export default function DashboardPage() {
         // Charger les données membre
         const [eventsData, cotisationsData] = await Promise.all([
           evenementService.getAllEvenements(1, 10, true),
-          cotisationService.getAllCotisations(1, 5, null, user?.id).catch(() => ({ data: { data: [] } })),
+          cotisationService.getMesCotisations().catch(() => ({ data: { data: [] } })),
         ]);
         
         const allEvents = eventsData.data?.data || [];

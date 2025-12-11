@@ -72,6 +72,9 @@ export const cotisationService = {
     return api.get(`/cotisations?${params}`);
   },
 
+  // Cotisations de l'utilisateur connecté
+  getMesCotisations: () => api.get("/cotisations/mes-cotisations"),
+
   // Récupérer une cotisation
   getCotisationById: (id) => api.get(`/cotisations/${id}`),
 
