@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { extractFormErrors } from "../utils/errorHandler";
 import "../styles/auth.css";
 
 export default function RegisterPage() {
@@ -18,6 +19,7 @@ export default function RegisterPage() {
     confirmMotDePasse: "",
   });
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Redirection automatique après succès
   useEffect(() => {
@@ -34,64 +36,15 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Effacer les erreurs quand l'utilisateur modifie le formulaire
     if (formError) setFormError("");
-  };
-
-  const validateForm = () => {
-    if (!formData.nom.trim()) {
-      setFormError("Le nom est requis");
-      return false;
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: null }));
     }
-    if (!formData.prenom.trim()) {
-      setFormError("Le prénom est requis");
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setFormError("L'email est requis");
-      return false;
-    }
-    // Validation email basique
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setFormError("Format d'email invalide");
-      return false;
-    }
-    if (formData.motDePasse.length < 8) {
-      setFormError("Le mot de passe doit contenir au moins 8 caractères");
-      return false;
-    }
-    // Validation force du mot de passe
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-    if (!passwordRegex.test(formData.motDePasse)) {
-      setFormError("Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre");
-      return false;
-    }
-    if (formData.motDePasse !== formData.confirmMotDePasse) {
-      setFormError("Les mots de passe ne correspondent pas");
-      return false;
-    }
-    return true;
-  };
-
-  // Validation rapide pour le bouton
-  const isFormValid = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-    return (
-      formData.nom.trim().length >= 2 &&
-      formData.prenom.trim().length >= 2 &&
-      emailRegex.test(formData.email) &&
-      formData.motDePasse.length >= 8 &&
-      passwordRegex.test(formData.motDePasse) &&
-      formData.motDePasse === formData.confirmMotDePasse
-    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
-
-    if (!validateForm()) return;
-
+    setFieldErrors({});
     setLoading(true);
     try {
       const { confirmMotDePasse, ...dataToSend } = formData;
@@ -109,35 +62,15 @@ export default function RegisterPage() {
       console.error("Erreur inscription:", err);
       console.error("Response data:", err.response?.data);
       console.error("Status:", err.response?.status);
-      
-      let errorMessage = "Erreur lors de l'inscription";
-      const status = err.response?.status;
-      const data = err.response?.data;
-      
-      // Gérer les codes de statut HTTP spécifiques
-      if (status === 409) {
-        // Email déjà utilisé
-        errorMessage = data?.message || "Cette adresse email est déjà utilisée";
-      } else if (status === 422 || status === 400) {
-        // Erreur de validation
-        if (data?.errors?.length > 0) {
-          errorMessage = data.errors[0]?.message || data.errors[0]?.msg || "Erreur de validation";
-        } else if (data?.message) {
-          errorMessage = data.message;
-        }
-      } else if (status >= 500) {
-        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
-      } else if (data?.message) {
-        // Message d'erreur du backend
-        errorMessage = data.message;
-      } else if (err.message === "Network Error") {
-        errorMessage = "Impossible de contacter le serveur. Vérifiez votre connexion.";
-      } else if (err.code === "ECONNABORTED") {
-        errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
-      }
-      
-      setFormError(errorMessage);
-      toast.error(errorMessage);
+
+      const { message, fieldErrors: errors } = extractFormErrors(
+        err,
+        "Erreur lors de l'inscription"
+      );
+
+      setFormError(message);
+      setFieldErrors(errors);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -183,7 +116,11 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               placeholder="Votre nom"
+              className={fieldErrors.nom ? "input-error" : ""}
             />
+            {fieldErrors.nom && (
+              <span className="field-error">{fieldErrors.nom}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -196,7 +133,11 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               placeholder="Votre prénom"
+              className={fieldErrors.prenom ? "input-error" : ""}
             />
+            {fieldErrors.prenom && (
+              <span className="field-error">{fieldErrors.prenom}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -209,11 +150,15 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               placeholder="email@example.com"
+              className={fieldErrors.email ? "input-error" : ""}
             />
+            {fieldErrors.email && (
+              <span className="field-error">{fieldErrors.email}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="telephone">Téléphone (optionnel)</label>
+            <label htmlFor="telephone">Téléphone</label>
             <input
               type="tel"
               id="telephone"
@@ -221,7 +166,12 @@ export default function RegisterPage() {
               value={formData.telephone}
               onChange={handleChange}
               placeholder="0601020304"
+              required
+              className={fieldErrors.telephone ? "input-error" : ""}
             />
+            {fieldErrors.telephone && (
+              <span className="field-error">{fieldErrors.telephone}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -234,7 +184,11 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               placeholder="••••••••"
+              className={fieldErrors.motDePasse ? "input-error" : ""}
             />
+            {fieldErrors.motDePasse && (
+              <span className="field-error">{fieldErrors.motDePasse}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -247,7 +201,11 @@ export default function RegisterPage() {
               onChange={handleChange}
               required
               placeholder="••••••••"
+              className={fieldErrors.confirmMotDePasse ? "input-error" : ""}
             />
+            {fieldErrors.confirmMotDePasse && (
+              <span className="field-error">{fieldErrors.confirmMotDePasse}</span>
+            )}
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary">
