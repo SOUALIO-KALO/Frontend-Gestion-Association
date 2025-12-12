@@ -333,6 +333,7 @@ export default function MembresPage() {
         size="lg"
       >
         <form onSubmit={handleCreateSubmit}>
+          {/* Ligne Nom / Prénom côte à côte sur écran ≥ sm */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Prénom"
@@ -348,6 +349,10 @@ export default function MembresPage() {
               error={formErrors.nom}
               required
             />
+          </div>
+
+          {/* Autres champs en-dessous, pleine largeur sur mobile, grille dès sm */}
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Email"
               type="email"
@@ -358,6 +363,7 @@ export default function MembresPage() {
             />
             <Input
               label="Téléphone"
+              name="telephone"
               value={formData.telephone}
               onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
               error={formErrors.telephone}
