@@ -3,6 +3,7 @@ import { Plus, Download, Filter, FileText, AlertTriangle, Mail, Loader2, Edit } 
 import { format, addMonths } from "date-fns";
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
+import { extractFormErrors } from "../utils/errorHandler";
 import { cotisationService, membreService } from "../services/authService";
 import {
   Button,
@@ -65,6 +66,7 @@ export default function CotisationsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [sendingRappel, setSendingRappel] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const loadCotisations = useCallback(async () => {
     try {
@@ -138,6 +140,7 @@ export default function CotisationsPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
     setSubmitting(true);
 
     try {
@@ -147,7 +150,12 @@ export default function CotisationsPage() {
       resetForm();
       loadCotisations();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de la création");
+      const { message, fieldErrors: errors } = extractFormErrors(
+        err,
+        "Erreur lors de la création"
+      );
+      toast.error(message);
+      setFieldErrors(errors);
     } finally {
       setSubmitting(false);
     }
@@ -185,6 +193,7 @@ export default function CotisationsPage() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
     setSubmitting(true);
 
     try {
@@ -195,7 +204,12 @@ export default function CotisationsPage() {
       resetForm();
       loadCotisations();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de la modification");
+      const { message, fieldErrors: errors } = extractFormErrors(
+        err,
+        "Erreur lors de la modification"
+      );
+      toast.error(message);
+      setFieldErrors(errors);
     } finally {
       setSubmitting(false);
     }
@@ -430,6 +444,7 @@ export default function CotisationsPage() {
             onChange={(e) => setFormData({ ...formData, membreId: e.target.value })}
             placeholder="Sélectionner un membre"
             required
+            error={fieldErrors.membreId}
           />
 
           <Input
@@ -448,6 +463,9 @@ export default function CotisationsPage() {
               }
             }}
           />
+          {fieldErrors.periode && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.periode}</p>
+          )}
           <p className="text-xs text-gray-500 -mt-3 mb-4">
             Mois et année de la cotisation mensuelle (ex: 01/2024 pour janvier 2024)
           </p>
@@ -458,6 +476,7 @@ export default function CotisationsPage() {
             value={formData.datePaiement}
             onChange={(e) => setFormData({ ...formData, datePaiement: e.target.value })}
             required
+            error={fieldErrors.datePaiement}
           />
 
           <Input
@@ -466,6 +485,7 @@ export default function CotisationsPage() {
             value={formData.dateExpiration}
             onChange={(e) => setFormData({ ...formData, dateExpiration: e.target.value })}
             required
+            error={fieldErrors.dateExpiration}
           />
 
           <Input
@@ -476,6 +496,7 @@ export default function CotisationsPage() {
             value={formData.montant}
             onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
             required
+            error={fieldErrors.montant}
           />
 
           <Select
@@ -483,6 +504,7 @@ export default function CotisationsPage() {
             options={MODES_PAIEMENT}
             value={formData.modePaiement}
             onChange={(e) => setFormData({ ...formData, modePaiement: e.target.value })}
+            error={fieldErrors.modePaiement}
           />
 
           {formData.dateExpiration && (
@@ -505,7 +527,7 @@ export default function CotisationsPage() {
             >
               Annuler
             </Button>
-            <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
+            <Button type="submit" loading={submitting} disabled={submitting}>
               Créer la cotisation
             </Button>
           </ModalFooter>

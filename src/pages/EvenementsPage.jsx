@@ -15,6 +15,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { fr } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { evenementService } from "../services/authService";
+import { extractFormErrors } from "../utils/errorHandler";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Button,
@@ -55,6 +56,7 @@ export default function EvenementsPage() {
     placesTotal: "20",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const loadEvenements = useCallback(async () => {
     try {
@@ -91,6 +93,7 @@ export default function EvenementsPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
     setSubmitting(true);
 
     try {
@@ -100,7 +103,12 @@ export default function EvenementsPage() {
       resetForm();
       loadEvenements();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Erreur lors de la création");
+      const { message, fieldErrors: errors } = extractFormErrors(
+        err,
+        "Erreur lors de la création"
+      );
+      toast.error(message);
+      setFieldErrors(errors);
     } finally {
       setSubmitting(false);
     }
@@ -451,6 +459,7 @@ export default function EvenementsPage() {
               value={formData.titre}
               onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
               required
+              error={fieldErrors.titre}
             />
 
             <div className="mb-4">
@@ -463,6 +472,9 @@ export default function EvenementsPage() {
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
               />
+              {fieldErrors.description && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.description}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -472,21 +484,16 @@ export default function EvenementsPage() {
                 value={formData.dateDebut}
                 onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
                 required
+                error={fieldErrors.dateDebut}
               />
               <Input
                 label="Date et heure de fin"
                 type="datetime-local"
                 value={formData.dateFin}
                 onChange={(e) => setFormData({ ...formData, dateFin: e.target.value })}
+                error={fieldErrors.dateFin}
               />
             </div>
-
-            <Input
-              label="Lieu"
-              value={formData.lieu}
-              onChange={(e) => setFormData({ ...formData, lieu: e.target.value })}
-              required
-            />
 
             <Input
               label="Nombre de places"
@@ -495,6 +502,7 @@ export default function EvenementsPage() {
               value={formData.placesTotal}
               onChange={(e) => setFormData({ ...formData, placesTotal: e.target.value })}
               required
+              error={fieldErrors.placesTotal}
             />
 
             <ModalFooter>
@@ -508,7 +516,7 @@ export default function EvenementsPage() {
               >
                 Annuler
               </Button>
-              <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
+              <Button type="submit" loading={submitting} disabled={submitting}>
                 Créer l'événement
               </Button>
             </ModalFooter>

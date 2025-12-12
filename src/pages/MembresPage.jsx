@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Search, Plus, Download, Filter, Trash2, Edit, Eye } from "lucide-react";
 import toast from "react-hot-toast";
 import { membreService } from "../services/authService";
+import { extractFormErrors } from "../utils/errorHandler";
 import {
   Button,
   Input,
@@ -122,11 +123,12 @@ export default function MembresPage() {
       resetForm();
       loadMembres();
     } catch (err) {
-      if (err.response?.data?.errors) {
-        setFormErrors(err.response.data.errors);
-      } else {
-        toast.error(err.response?.data?.message || "Erreur lors de la création");
-      }
+      const { message, fieldErrors } = extractFormErrors(
+        err,
+        "Erreur lors de la création"
+      );
+      toast.error(message);
+      setFormErrors(fieldErrors);
     } finally {
       setSubmitting(false);
     }
@@ -387,7 +389,7 @@ export default function MembresPage() {
             >
               Annuler
             </Button>
-            <Button type="submit" loading={submitting} disabled={!isFormValid() || submitting}>
+            <Button type="submit" loading={submitting} disabled={submitting}>
               Créer le membre
             </Button>
           </ModalFooter>
