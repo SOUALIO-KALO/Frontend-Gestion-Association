@@ -28,32 +28,10 @@ export default function ResetPasswordPage() {
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-    
-    if (formData.motDePasse.length < 8) {
-      errors.motDePasse = 'Le mot de passe doit contenir au moins 8 caractères';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.motDePasse)) {
-      errors.motDePasse = 'Le mot de passe doit contenir une majuscule, une minuscule et un chiffre';
-    }
-    
-    if (formData.motDePasse !== formData.confirmMotDePasse) {
-      errors.confirmMotDePasse = 'Les mots de passe ne correspondent pas';
-    }
-    
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return false;
-    }
-    return true;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    setLoading(true);
     setFieldErrors({});
+    setLoading(true);
 
     try {
       await authService.resetPassword(token, formData.motDePasse, formData.confirmMotDePasse);
