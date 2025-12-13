@@ -35,6 +35,35 @@ const ROLES = [
   { value: "MEMBRE", label: "Membre" },
 ];
 
+const validateMembreForm = (data, { requirePassword = false } = {}) => {
+  const errors = {};
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!data.prenom || data.prenom.trim().length < 2) {
+    errors.prenom = "Prénom trop court";
+  }
+  if (!data.nom || data.nom.trim().length < 2) {
+    errors.nom = "Nom trop court";
+  }
+  if (!data.email || !emailRegex.test(data.email)) {
+    errors.email = "Email invalide";
+  }
+  if (requirePassword && (!data.motDePasse || data.motDePasse.length < 8)) {
+    errors.motDePasse = "Mot de passe requis (8 caractères min)";
+  }
+  if (!requirePassword && data.motDePasse && data.motDePasse.length < 8) {
+    errors.motDePasse = "8 caractères minimum";
+  }
+  if (!data.statut) {
+    errors.statut = "Statut requis";
+  }
+  if (!data.role) {
+    errors.role = "Rôle requis";
+  }
+
+  return errors;
+};
+
 export default function MembresPage() {
   const [membres, setMembres] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +106,15 @@ export default function MembresPage() {
         filters.role || null
       );
       setMembres(response.data.data || []);
-      setPagination(response.data.pagination || { total: 0, pages: 1 });
+      const paginationData = response.data.pagination || {};
+      const totalItems =
+        paginationData.total ?? response.data.total ?? (response.data.data?.length || 0);
+      const pages =
+        paginationData.pages ??
+        (paginationData.limit
+          ? Math.max(1, Math.ceil(totalItems / paginationData.limit))
+          : Math.max(1, Math.ceil(totalItems / 10)));
+      setPagination({ total: totalItems, pages });
     } catch (err) {
       toast.error("Erreur lors du chargement des membres");
       console.error(err);
@@ -129,6 +166,14 @@ export default function MembresPage() {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setFormErrors({});
+
+    const errors = validateMembreForm(formData, { requirePassword: true });
+    if (Object.keys(errors).length) {
+      setFormErrors(errors);
+      toast.error("Veuillez corriger les erreurs du formulaire");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -203,6 +248,14 @@ export default function MembresPage() {
     e.preventDefault();
     if (!selectedMembre) return;
     setFormErrors({});
+
+    const errors = validateMembreForm(formData, { requirePassword: false });
+    if (Object.keys(errors).length) {
+      setFormErrors(errors);
+      toast.error("Veuillez corriger les erreurs du formulaire");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
