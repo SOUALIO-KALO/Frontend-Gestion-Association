@@ -13,11 +13,13 @@ export default function LoginPage() {
     email: "",
     motDePasse: "",
   });
+  const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (formError) setFormError("");
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: null }));
     }
@@ -31,6 +33,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
     setFieldErrors({});
 
     try {
@@ -40,6 +43,7 @@ export default function LoginPage() {
     } catch (err) {
       const { message, fieldErrors: errors } = extractFormErrors(err, "Erreur de connexion");
       toast.error(message);
+      setFormError(message);
       setFieldErrors(errors);
     }
   };
@@ -57,6 +61,13 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-gray-900">Bienvenue</h1>
             <p className="text-gray-600 mt-1">Connectez-vous à votre compte</p>
           </div>
+
+          {/* Form error */}
+          {formError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">

@@ -17,6 +17,7 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
@@ -30,8 +31,19 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
     setFieldErrors({});
     setLoading(true);
+
+    // Validation locale : confirmation mot de passe
+    if (formData.motDePasse !== formData.confirmMotDePasse) {
+      setLoading(false);
+      const message = 'Les mots de passe ne correspondent pas';
+      setFormError(message);
+      setFieldErrors({ confirmMotDePasse: message });
+      toast.error(message);
+      return;
+    }
 
     try {
       await authService.resetPassword(token, formData.motDePasse, formData.confirmMotDePasse);
@@ -44,6 +56,7 @@ export default function ResetPasswordPage() {
         'Une erreur est survenue. Le lien est peut-être expiré.'
       );
       toast.error(message);
+      setFormError(message);
       setFieldErrors(errors);
     } finally {
       setLoading(false);
@@ -177,6 +190,12 @@ export default function ResetPasswordPage() {
               Créez un nouveau mot de passe sécurisé
             </p>
           </div>
+
+          {formError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">

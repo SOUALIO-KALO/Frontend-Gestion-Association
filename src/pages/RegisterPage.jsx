@@ -46,6 +46,16 @@ export default function RegisterPage() {
     setFormError("");
     setFieldErrors({});
     setLoading(true);
+
+    // Validation locale : confirmation mot de passe
+    if (formData.motDePasse !== formData.confirmMotDePasse) {
+      setLoading(false);
+      const message = "Les mots de passe ne correspondent pas";
+      setFormError(message);
+      setFieldErrors({ confirmMotDePasse: message });
+      toast.error(message);
+      return;
+    }
     try {
       const { confirmMotDePasse, ...dataToSend } = formData;
       const response = await register(dataToSend);

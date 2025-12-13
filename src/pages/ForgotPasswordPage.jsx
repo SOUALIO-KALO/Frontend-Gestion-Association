@@ -8,11 +8,13 @@ import { extractFormErrors } from '../utils/errorHandler';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
     setFieldErrors({});
     setLoading(true);
 
@@ -22,6 +24,7 @@ export default function ForgotPasswordPage() {
     } catch (err) {
       const { message, fieldErrors: errors } = extractFormErrors(err, 'Une erreur est survenue.');
       toast.error(message);
+      setFormError(message);
       setFieldErrors(errors);
     } finally {
       setLoading(false);
@@ -76,6 +79,12 @@ export default function ForgotPasswordPage() {
               pour réinitialiser votre mot de passe.
             </p>
           </div>
+
+          {formError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError}
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
