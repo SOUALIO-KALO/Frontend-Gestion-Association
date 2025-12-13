@@ -141,11 +141,13 @@ export const extractFormErrors = (error, defaultMessage = "Une erreur s'est prod
   }
 
   // Cas d'une erreur ciblée sur un seul champ (ex: DUPLICATE_ENTRY avec un champ unique)
-  if (data.field && data.message) {
+  const singleField = data.field || data.details?.field;
+  const singleMessage = data.message || data.details?.message;
+  if (singleField && singleMessage) {
     return {
-      message: data.message || defaultMessage,
+      message: singleMessage || defaultMessage,
       fieldErrors: {
-        [data.field]: data.message,
+        [singleField]: singleMessage,
       },
     };
   }
