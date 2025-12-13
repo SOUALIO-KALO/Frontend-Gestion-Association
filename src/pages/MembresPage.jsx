@@ -46,6 +46,7 @@ export default function MembresPage() {
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMembre, setSelectedMembre] = useState(null);
   const [formData, setFormData] = useState({
@@ -59,6 +60,12 @@ export default function MembresPage() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  const handlePageChange = (newPage) => {
+    const total = pagination.pages || 1;
+    const nextPage = Math.min(Math.max(1, newPage), total);
+    if (nextPage !== page) setPage(nextPage);
+  };
 
   const loadMembres = useCallback(async () => {
     try {
@@ -82,6 +89,14 @@ export default function MembresPage() {
   useEffect(() => {
     loadMembres();
   }, [loadMembres]);
+
+  // Empêcher de rester sur une page au-delà de la dernière
+  useEffect(() => {
+    const total = pagination.pages || 1;
+    if (page > total) {
+      setPage(total);
+    }
+  }, [pagination.pages, page]);
 
   // Filter members by search
   const filteredMembres = membres.filter((membre) => {
@@ -167,6 +182,50 @@ export default function MembresPage() {
   const openDeleteModal = (membre) => {
     setSelectedMembre(membre);
     setShowDeleteModal(true);
+  };
+
+  const openEditModal = (membre) => {
+    setSelectedMembre(membre);
+    setFormData({
+      nom: membre.nom || "",
+      prenom: membre.prenom || "",
+      email: membre.email || "",
+      telephone: membre.telephone || "",
+      motDePasse: "",
+      statut: membre.statut || "ACTIF",
+      role: membre.role || "MEMBRE",
+    });
+    setFormErrors({});
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedMembre) return;
+    setFormErrors({});
+    setSubmitting(true);
+
+    try {
+      const payload = { ...formData };
+      if (!payload.motDePasse) {
+        delete payload.motDePasse; // ne pas écraser le mot de passe si champ laissé vide
+      }
+      await membreService.updateMembre(selectedMembre.id, payload);
+      toast.success("Membre mis à jour avec succès");
+      setShowEditModal(false);
+      setSelectedMembre(null);
+      resetForm();
+      loadMembres();
+    } catch (err) {
+      const { message, fieldErrors } = extractFormErrors(
+        err,
+        "Erreur lors de la mise à jour"
+      );
+      toast.error(message);
+      setFormErrors(fieldErrors);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Validation du formulaire
@@ -299,6 +358,13 @@ export default function MembresPage() {
                   <TableCell>
                     <div className="flex gap-1">
                       <button
+                        className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                        onClick={() => openEditModal(membre)}
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
                         className="p-1.5 rounded hover:bg-red-50 text-red-600"
                         onClick={() => openDeleteModal(membre)}
                         title="Supprimer"
@@ -317,7 +383,7 @@ export default function MembresPage() {
             totalPages={pagination.pages}
             totalItems={pagination.total}
             itemsPerPage={10}
-            onPageChange={setPage}
+            onPageChange={handlePageChange}
           />
         </>
       )}
@@ -397,6 +463,91 @@ export default function MembresPage() {
             </Button>
             <Button type="submit" loading={submitting} disabled={submitting}>
               Créer le membre
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedMembre(null);
+          resetForm();
+        }}
+        title="Modifier le membre"
+        size="lg"
+      >
+        <form onSubmit={handleEditSubmit}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Prénom"
+              value={formData.prenom}
+              onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
+              error={formErrors.prenom}
+              required
+            />
+            <Input
+              label="Nom"
+              value={formData.nom}
+              onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
+              error={formErrors.nom}
+              required
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              error={formErrors.email}
+              required
+            />
+            <Input
+              label="Téléphone"
+              name="telephone"
+              value={formData.telephone}
+              onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+              error={formErrors.telephone}
+            />
+            <Input
+              label="Mot de passe (laisser vide pour conserver)"
+              type="password"
+              value={formData.motDePasse}
+              onChange={(e) => setFormData({ ...formData, motDePasse: e.target.value })}
+              error={formErrors.motDePasse}
+            />
+            <Select
+              label="Statut"
+              options={STATUTS.slice(1)}
+              value={formData.statut}
+              onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
+            />
+            <Select
+              label="Rôle"
+              options={ROLES.slice(1)}
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            />
+          </div>
+
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedMembre(null);
+                resetForm();
+              }}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" loading={submitting} disabled={submitting}>
+              Mettre à jour
             </Button>
           </ModalFooter>
         </form>
