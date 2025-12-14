@@ -496,6 +496,14 @@ export default function EvenementsPage() {
             </div>
 
             <Input
+              label="Lieu"
+              value={formData.lieu}
+              onChange={(e) => setFormData({ ...formData, lieu: e.target.value })}
+              required
+              error={fieldErrors.lieu}
+            />
+
+            <Input
               label="Nombre de places"
               type="number"
               min="1"
